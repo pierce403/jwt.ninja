@@ -501,7 +501,7 @@
             );
             const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
             const signatureArray = Array.from(new Uint8Array(signature));
-            return base64UrlEncode(String.fromCharCode.apply(null, signatureArray));
+            return base64UrlEncode(signatureArray.reduce((str, byte) => str + String.fromCharCode(byte), ''));
         }
 
         // Brute force HMAC secret
@@ -538,6 +538,13 @@
             navigator.clipboard.writeText(text).then(() => {
                 const originalText = buttonElement.textContent;
                 buttonElement.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                }, 2000);
+            }).catch((err) => {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '❌ Copy failed';
+                console.error('Failed to copy:', err);
                 setTimeout(() => {
                     buttonElement.textContent = originalText;
                 }, 2000);
