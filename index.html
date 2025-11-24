@@ -309,7 +309,7 @@
             'iloveyou', 'master', 'sunshine', 'ashley', 'bailey', 'shadow',
             'superman', 'qazwsx', 'michael', 'football', 'password1', '123456789',
             'admin', 'root', 'toor', 'pass', 'test', 'guest', 'changeme',
-            'welcome', 'hello', 'password123', 'letmein', 'secret123', 'secretkey',
+            'welcome', 'hello', 'password123', 'secret123', 'secretkey',
             'key', 'mykey', 'mysecret', 'jwt', 'token', 'auth', 'yourkey',
             '', 'null', 'none', 'undefined'
         ];
@@ -500,7 +500,8 @@
                 ['sign']
             );
             const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
-            return base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
+            const signatureArray = Array.from(new Uint8Array(signature));
+            return base64UrlEncode(String.fromCharCode.apply(null, signatureArray));
         }
 
         // Brute force HMAC secret
