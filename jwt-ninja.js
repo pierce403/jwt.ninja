@@ -13,6 +13,9 @@ const DEFAULT_JWT_SECRETS = [
     'auth', 'token', 'shhh', 'topsecret', 'verysecretkey', 'my-very-secret', 'my-very-secret-key'
 ];
 
+let currentTokenContext = { header: null, payload: null, parts: null };
+let discoveredSecret = null;
+
 // Base64URL decode
 function base64UrlDecode(str) {
     str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -74,6 +77,87 @@ function getCandidateSecrets(customSecret) {
         }
     });
     return candidates;
+}
+
+function resetForgeUI() {
+    discoveredSecret = null;
+    const forgeSection = document.getElementById('forgeSection');
+    if (forgeSection) forgeSection.style.display = 'none';
+    const signedOutput = document.getElementById('signedOutput');
+    if (signedOutput) signedOutput.style.display = 'none';
+}
+
+function showForgeUI(secret) {
+    if (!currentTokenContext || !currentTokenContext.payload) return;
+    discoveredSecret = secret;
+    const forgeSection = document.getElementById('forgeSection');
+    const secretDisplay = document.getElementById('foundSecretValue');
+    const payloadEditor = document.getElementById('payloadEditor');
+    if (secretDisplay) secretDisplay.textContent = secret === '' ? '(empty string)' : secret;
+    if (payloadEditor) payloadEditor.value = JSON.stringify(currentTokenContext.payload, null, 2);
+    if (forgeSection) forgeSection.style.display = 'block';
+    const signedOutput = document.getElementById('signedOutput');
+    if (signedOutput) signedOutput.style.display = 'none';
+}
+
+function setAdminTrue() {
+    const payloadEditor = document.getElementById('payloadEditor');
+    if (!payloadEditor) return;
+    try {
+        const payload = JSON.parse(payloadEditor.value || '{}');
+        payload.admin = true;
+        if (payload.role) {
+            payload.role = 'admin';
+        }
+        payloadEditor.value = JSON.stringify(payload, null, 2);
+    } catch (e) {
+        alert('Payload JSON is invalid. Please fix it before applying admin=true.');
+    }
+}
+
+async function signJWTWithSecret(header, payload, secret) {
+    const headerB64 = base64UrlEncode(JSON.stringify(header));
+    const payloadB64 = base64UrlEncode(JSON.stringify(payload));
+    const signature = await hmacSign(`${headerB64}.${payloadB64}`, secret);
+    return `${headerB64}.${payloadB64}.${signature}`;
+}
+
+async function resignJWT() {
+    if (!discoveredSecret) {
+        alert('Brute force a HMAC secret first to re-sign the token.');
+        return;
+    }
+    if (!currentTokenContext || !currentTokenContext.header) {
+        alert('Analyze a JWT first.');
+        return;
+    }
+
+    const payloadEditor = document.getElementById('payloadEditor');
+    if (!payloadEditor) return;
+
+    let payloadObj;
+    try {
+        payloadObj = JSON.parse(payloadEditor.value || '{}');
+    } catch (e) {
+        alert('Payload JSON is invalid. Please correct it before re-signing.');
+        return;
+    }
+
+    const header = { ...currentTokenContext.header };
+    // Ensure HMAC algorithm for signing
+    if (!header.alg || !header.alg.startsWith('HS')) {
+        header.alg = 'HS256';
+    }
+
+    try {
+        const signedToken = await signJWTWithSecret(header, payloadObj, discoveredSecret);
+        const signedDisplay = document.getElementById('signedTokenDisplay');
+        const signedOutput = document.getElementById('signedOutput');
+        if (signedDisplay) signedDisplay.textContent = signedToken;
+        if (signedOutput) signedOutput.style.display = 'block';
+    } catch (e) {
+        alert('Failed to sign JWT: ' + e.message);
+    }
 }
 
 // Parse JWT
@@ -377,8 +461,12 @@ async function analyzeJWT() {
     }
 
     try {
+        resetForgeUI();
+        currentTokenContext = { header: null, payload: null, parts: null };
+
         // Parse and display decoded JWT
         const { header, payload, signature } = parseJWT(jwtInput);
+        currentTokenContext = { header, payload, parts: jwtInput.split('.') };
         
         document.getElementById('headerDisplay').textContent = JSON.stringify(header, null, 2);
         document.getElementById('payloadDisplay').textContent = JSON.stringify(payload, null, 2);
@@ -446,11 +534,11 @@ async function analyzeJWT() {
         document.getElementById('resultsSection').style.display = 'block';
 
         // Brute force HMAC if it's an HMAC algorithm
-        if (header.alg && (header.alg === 'HS256' || header.alg === 'HS384' || header.alg === 'HS512')) {
-            document.getElementById('bruteforceSection').style.display = 'block';
-            const bruteforceContainer = document.getElementById('bruteforceContainer');
-            const hasCustomSecret = customSecret && customSecret.trim();
-            
+                if (header.alg && (header.alg === 'HS256' || header.alg === 'HS384' || header.alg === 'HS512')) {
+                    document.getElementById('bruteforceSection').style.display = 'block';
+                    const bruteforceContainer = document.getElementById('bruteforceContainer');
+                    const hasCustomSecret = customSecret && customSecret.trim();
+                    
             // Create loading message
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'result-item';
@@ -468,39 +556,60 @@ async function analyzeJWT() {
                 bruteforceContainer.innerHTML = '';
                 
                 if (results && results.length > 0) {
-                    results.forEach(result => {
-                        const secretDisplay = result.secret === '' ? '(empty string)' : result.secret;
-                        const resultDiv = document.createElement('div');
-                        resultDiv.className = 'result-item danger';
-                        
-                        // Create heading
-                        const heading = document.createElement('h3');
-                        heading.textContent = '✅ Secret Found! ';
-                        const tagSpan = document.createElement('span');
-                        tagSpan.className = 'tag';
-                        tagSpan.textContent = 'CRITICAL';
-                        heading.appendChild(tagSpan);
-                        
-                        // Create first paragraph with secret
-                        const p1 = document.createElement('p');
-                        const strong = document.createElement('strong');
-                        strong.textContent = 'The HMAC secret is: ';
-                        p1.appendChild(strong);
-                        const code = document.createElement('code');
-                        code.style.cssText = 'background: #fff3cd; padding: 5px 10px; border-radius: 3px; font-size: 16px;';
-                        code.textContent = secretDisplay;
-                        p1.appendChild(code);
-                        
-                        // Create second paragraph
-                        const p2 = document.createElement('p');
-                        p2.textContent = 'This is a critical vulnerability! The JWT is signed with a weak, common password. An attacker can create valid tokens.';
-                        
-                        resultDiv.appendChild(heading);
-                        resultDiv.appendChild(p1);
-                        resultDiv.appendChild(p2);
-                        bruteforceContainer.appendChild(resultDiv);
-                    });
+                    const primary = results[0];
+                    const primarySecretDisplay = primary.secret === '' ? '(empty string)' : primary.secret;
+                    
+                    // Highlight the first found secret at the top
+                    const primaryDiv = document.createElement('div');
+                    primaryDiv.className = 'result-item danger';
+                    const heading = document.createElement('h3');
+                    heading.textContent = '✅ Secret Found! ';
+                    const tagSpan = document.createElement('span');
+                    tagSpan.className = 'tag';
+                    tagSpan.textContent = 'CRITICAL';
+                    heading.appendChild(tagSpan);
+                    const p1 = document.createElement('p');
+                    const strong = document.createElement('strong');
+                    strong.textContent = 'The HMAC secret is: ';
+                    p1.appendChild(strong);
+                    const code = document.createElement('code');
+                    code.style.cssText = 'background: #fff3cd; padding: 5px 10px; border-radius: 3px; font-size: 16px;';
+                    code.textContent = primarySecretDisplay;
+                    p1.appendChild(code);
+                    const p2 = document.createElement('p');
+                    p2.textContent = 'This is a critical vulnerability! The JWT is signed with a weak, common password. An attacker can create valid tokens.';
+                    const p3 = document.createElement('p');
+                    p3.textContent = 'You can now edit claims and re-sign the token with this secret below.';
+                    primaryDiv.appendChild(heading);
+                    primaryDiv.appendChild(p1);
+                    primaryDiv.appendChild(p2);
+                    primaryDiv.appendChild(p3);
+                    bruteforceContainer.appendChild(primaryDiv);
+
+                    // Show forge UI with the discovered secret
+                    showForgeUI(primary.secret);
+
+                    // Render any additional collisions below the highlight
+                    if (results.length > 1) {
+                        results.slice(1).forEach(result => {
+                            const secretDisplay = result.secret === '' ? '(empty string)' : result.secret;
+                            const resultDiv = document.createElement('div');
+                            resultDiv.className = 'result-item warning';
+                            const h = document.createElement('h3');
+                            h.textContent = '⚠️ Additional matching secret ';
+                            const tag = document.createElement('span');
+                            tag.className = 'tag';
+                            tag.textContent = 'COLLISION';
+                            h.appendChild(tag);
+                            const para = document.createElement('p');
+                            para.textContent = `Another secret produced the same signature: ${secretDisplay}`;
+                            resultDiv.appendChild(h);
+                            resultDiv.appendChild(para);
+                            bruteforceContainer.appendChild(resultDiv);
+                        });
+                    }
                 } else {
+                    resetForgeUI();
                     const resultDiv = document.createElement('div');
                     resultDiv.className = 'result-item';
                     

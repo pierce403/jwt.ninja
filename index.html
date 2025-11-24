@@ -354,6 +354,32 @@
                 <h2>🔑 HMAC Secret Brute Force</h2>
                 <div id="bruteforceContainer"></div>
             </div>
+
+            <div id="forgeSection" class="results-section" style="display: none;">
+                <h2>🛠 Forge JWT with discovered HMAC</h2>
+                <div class="info-box subtle">
+                    <p><strong>Discovered secret:</strong> <code id="foundSecretValue"></code></p>
+                    <p>Use this to edit claims and re-sign the token.</p>
+                </div>
+
+                <div class="input-group">
+                    <label for="payloadEditor">Payload editor</label>
+                    <textarea id="payloadEditor" placeholder="Edit the JWT payload JSON here"></textarea>
+                    <div class="helper-text">Update claims, then re-sign with the discovered HMAC secret.</div>
+                </div>
+
+                <div class="input-group">
+                    <button id="adminButton" type="button" onclick="setAdminTrue()">Set admin=true</button>
+                    <button id="resignButton" type="button" onclick="resignJWT()">Re-sign JWT</button>
+                </div>
+
+                <div id="signedOutput" class="result-item" style="display: none;">
+                    <h3>🆕 Newly signed JWT <span class="tag">FORGED</span></h3>
+                    <p>Signed with the discovered HMAC secret.</p>
+                    <div id="signedTokenDisplay" class="jwt-display"></div>
+                    <button class="copy-btn" type="button" onclick="copyToClipboard(document.getElementById('signedTokenDisplay').textContent, this)">📋 Copy Token</button>
+                </div>
+            </div>
         </div>
 
         <footer>
