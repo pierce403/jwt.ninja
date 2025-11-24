@@ -569,15 +569,36 @@
                 tamperedTokens.forEach((item, index) => {
                     const resultDiv = document.createElement('div');
                     resultDiv.className = `result-item ${item.type}`;
-                    resultDiv.innerHTML = `
-                        <h3>
-                            ${item.name}
-                            <span class="tag">${item.tag}</span>
-                        </h3>
-                        <p>${item.description}</p>
-                        <div class="jwt-display">${item.token}</div>
-                        <button class="copy-btn" onclick="copyToClipboard('${item.token.replace(/'/g, "\\'")}', this)">📋 Copy Token</button>
-                    `;
+                    
+                    // Create heading with name and tag
+                    const heading = document.createElement('h3');
+                    heading.textContent = item.name;
+                    const tagSpan = document.createElement('span');
+                    tagSpan.className = 'tag';
+                    tagSpan.textContent = item.tag;
+                    heading.appendChild(document.createTextNode(' '));
+                    heading.appendChild(tagSpan);
+                    
+                    // Create description paragraph
+                    const description = document.createElement('p');
+                    description.textContent = item.description;
+                    
+                    // Create JWT display div
+                    const jwtDisplay = document.createElement('div');
+                    jwtDisplay.className = 'jwt-display';
+                    jwtDisplay.textContent = item.token;
+                    
+                    // Create copy button
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-btn';
+                    copyButton.textContent = '📋 Copy Token';
+                    copyButton.onclick = function() { copyToClipboard(item.token, this); };
+                    
+                    // Append all elements
+                    resultDiv.appendChild(heading);
+                    resultDiv.appendChild(description);
+                    resultDiv.appendChild(jwtDisplay);
+                    resultDiv.appendChild(copyButton);
                     resultsContainer.appendChild(resultDiv);
                 });
 
@@ -587,32 +608,73 @@
                 if (header.alg && (header.alg === 'HS256' || header.alg === 'HS384' || header.alg === 'HS512')) {
                     document.getElementById('bruteforceSection').style.display = 'block';
                     const bruteforceContainer = document.getElementById('bruteforceContainer');
-                    bruteforceContainer.innerHTML = '<div class="result-item"><p>🔄 Attempting to brute force HMAC secret with common passwords... <span class="spinner"></span></p></div>';
+                    
+                    // Create loading message
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'result-item';
+                    const loadingP = document.createElement('p');
+                    loadingP.textContent = '🔄 Attempting to brute force HMAC secret with common passwords... ';
+                    const spinner = document.createElement('span');
+                    spinner.className = 'spinner';
+                    loadingP.appendChild(spinner);
+                    loadingDiv.appendChild(loadingP);
+                    bruteforceContainer.innerHTML = '';
+                    bruteforceContainer.appendChild(loadingDiv);
 
                     setTimeout(async () => {
                         const results = await bruteForceHMAC(jwtInput);
+                        bruteforceContainer.innerHTML = '';
                         
                         if (results && results.length > 0) {
-                            bruteforceContainer.innerHTML = '';
                             results.forEach(result => {
                                 const secretDisplay = result.secret === '' ? '(empty string)' : result.secret;
                                 const resultDiv = document.createElement('div');
                                 resultDiv.className = 'result-item danger';
-                                resultDiv.innerHTML = `
-                                    <h3>✅ Secret Found! <span class="tag">CRITICAL</span></h3>
-                                    <p><strong>The HMAC secret is:</strong> <code style="background: #fff3cd; padding: 5px 10px; border-radius: 3px; font-size: 16px;">${secretDisplay}</code></p>
-                                    <p>This is a critical vulnerability! The JWT is signed with a weak, common password. An attacker can create valid tokens.</p>
-                                `;
+                                
+                                // Create heading
+                                const heading = document.createElement('h3');
+                                heading.textContent = '✅ Secret Found! ';
+                                const tagSpan = document.createElement('span');
+                                tagSpan.className = 'tag';
+                                tagSpan.textContent = 'CRITICAL';
+                                heading.appendChild(tagSpan);
+                                
+                                // Create first paragraph with secret
+                                const p1 = document.createElement('p');
+                                const strong = document.createElement('strong');
+                                strong.textContent = 'The HMAC secret is: ';
+                                p1.appendChild(strong);
+                                const code = document.createElement('code');
+                                code.style.cssText = 'background: #fff3cd; padding: 5px 10px; border-radius: 3px; font-size: 16px;';
+                                code.textContent = secretDisplay;
+                                p1.appendChild(code);
+                                
+                                // Create second paragraph
+                                const p2 = document.createElement('p');
+                                p2.textContent = 'This is a critical vulnerability! The JWT is signed with a weak, common password. An attacker can create valid tokens.';
+                                
+                                resultDiv.appendChild(heading);
+                                resultDiv.appendChild(p1);
+                                resultDiv.appendChild(p2);
                                 bruteforceContainer.appendChild(resultDiv);
                             });
                         } else {
-                            bruteforceContainer.innerHTML = `
-                                <div class="result-item">
-                                    <h3>❌ Secret Not Found</h3>
-                                    <p>Could not crack the HMAC secret with common passwords. This is good! The secret appears to be strong.</p>
-                                    <p>Tested ${COMMON_PASSWORDS.length} common passwords.</p>
-                                </div>
-                            `;
+                            const resultDiv = document.createElement('div');
+                            resultDiv.className = 'result-item';
+                            
+                            const heading = document.createElement('h3');
+                            heading.textContent = '❌ Secret Not Found';
+                            
+                            const p1 = document.createElement('p');
+                            p1.textContent = 'Could not crack the HMAC secret with common passwords. This is good! The secret appears to be strong.';
+                            
+                            const p2 = document.createElement('p');
+                            p2.textContent = `Tested ${COMMON_PASSWORDS.length} common passwords.`;
+                            
+                            resultDiv.appendChild(heading);
+                            resultDiv.appendChild(p1);
+                            resultDiv.appendChild(p2);
+                            bruteforceContainer.appendChild(resultDiv);
                         }
                     }, 100);
                 } else {
