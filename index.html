@@ -390,13 +390,9 @@
 
             // 4. Modified payload (admin privilege escalation)
             const adminPayload = { ...payload };
-            if (!adminPayload.admin) {
-                adminPayload.admin = true;
-            }
+            adminPayload.admin = true;
             if (adminPayload.role) {
                 adminPayload.role = 'admin';
-            } else {
-                adminPayload.admin = true;
             }
             const adminToken = parts[0] + '.' + base64UrlEncode(JSON.stringify(adminPayload)) + '.' + parts[2];
             tamperedTokens.push({
@@ -431,7 +427,7 @@
                 const modifiedToken = parts[0] + '.' + base64UrlEncode(JSON.stringify(modifiedPayload)) + '.' + parts[2];
                 tamperedTokens.push({
                     name: 'User ID Modification (Unsigned)',
-                    description: 'Changed user identifier to "0" or admin user without re-signing.',
+                    description: 'Changed user identifier to "0" without re-signing.',
                     token: modifiedToken,
                     type: 'warning',
                     tag: 'MEDIUM'
