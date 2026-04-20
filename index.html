@@ -301,6 +301,68 @@
             color: #014361;
             margin: 5px 0;
         }
+
+        .community-box {
+            background: #f8f9fa;
+            border: 1px solid #dde3f5;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .community-box p {
+            color: #334;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .community-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .community-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .community-link.primary {
+            background: #24292f;
+            color: white;
+        }
+
+        .community-link.secondary {
+            background: white;
+            color: #334;
+            border: 1px solid #cfd6ea;
+        }
+
+        .community-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(36, 41, 47, 0.15);
+        }
+
+        footer a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -314,6 +376,14 @@
             <div class="info-box">
                 <p><strong>⚠️ Security Warning:</strong> This tool is for authorized security testing only.</p>
                 <p>Use it responsibly to test your own applications or applications you have permission to test.</p>
+            </div>
+
+            <div class="community-box">
+                <p><strong>Build JWT.ninja with us.</strong> Have a feature request, bug report, or a fix to contribute? Open an issue or send a pull request on GitHub.</p>
+                <div class="community-actions">
+                    <a class="community-link primary" href="https://github.com/pierce403/jwt.ninja" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+                    <a class="community-link secondary" href="https://github.com/pierce403/jwt.ninja/issues" target="_blank" rel="noopener noreferrer">Request a Feature</a>
+                </div>
             </div>
 
             <div class="analysis-grid">
@@ -385,6 +455,7 @@
         <footer>
             <p>JWT.ninja - Educational Security Tool</p>
             <p>Always obtain proper authorization before testing</p>
+            <p><a href="https://github.com/pierce403/jwt.ninja" target="_blank" rel="noopener noreferrer">GitHub</a> • Feature requests and pull requests are welcome</p>
         </footer>
     </div>
 
